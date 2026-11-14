@@ -48,8 +48,7 @@ func TestHelper(_ *testing.T) {
 		if err != nil {
 			os.Exit(98)
 		}
-		_, _ = fmt.Fprintln(os.Stdout, dir)
-		_, _ = fmt.Fprintln(os.Stdout, helperValue())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n%s\n", dir, helperValue())
 		fmt.Fprintln(os.Stderr, "stderr")
 	case "fd":
 		file := os.NewFile(3, "inherited")

@@ -243,7 +243,12 @@ func helperModel(args []string) int {
 					if findErr != nil {
 						return 98
 					}
-					_ = process.Kill()
+					if killErr := process.Kill(); killErr != nil {
+						return 98
+					}
+					// Darwin may return before SIGKILL is delivered; a normal exit
+					// must not win the race against the requested crash.
+					<-timer.C
 					return 98
 				}
 				code, err := strconv.Atoi(string(data))
