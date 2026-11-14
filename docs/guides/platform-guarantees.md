@@ -106,6 +106,12 @@ unconfirmed terminal result carries `CleanupFailed` and an error wrapping
 Failed or malformed runtime enumeration is retained as an error and cannot be
 reported as an empty unit.
 
+macOS can report `EPERM` when a group signal races the last member's exit.
+procguard treats that as an already-ended unit only after a fresh kernel query
+confirms no live group members, including the leader. A live unsignalable member
+or a failed query preserves the signal error; permission failures are not
+unconditionally ignored.
+
 `Supervisor.State().Running` consults the current child's exit observation directly.
 Once `Child.Exited()` closes it is false, including during descendant cleanup;
 this snapshot does not depend on a separate goroutine being scheduled. As with

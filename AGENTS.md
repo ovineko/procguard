@@ -47,6 +47,8 @@
   The raw regression must use a non-leader thread; the main thread can remain present.
 - Linux procfs permission errors require a group check: ignore unrelated or vanished
   PIDs, but retain conservative fallback for unreadable members or unknown groups.
+- Darwin group-signal EPERM is benign only after a kernel query confirms no live
+  group members including the leader; retain real denials and probe failures.
 - BSD process membership tests use native generated ABI records; a failed or malformed query is an error, never empty membership.
 - Portable tests: `task test:crossarch`; `sh scripts/crossarch.sh pack /tmp/procguard-tests.tar.gz`
   creates a hardware bundle. Unit helpers re-execute the absolute test-binary path and never build
