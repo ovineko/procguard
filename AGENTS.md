@@ -82,8 +82,12 @@
   not security boundaries.
 - Windows launch containment uses suspended creation and Job Object assignment
   before resume, eliminating a child-execution window before assignment.
+  Keep Job Object ABI buffers as typed pointers until a direct SyscallN call;
+  x/sys uintptr wrappers lose stack relocation tracking. KeepAlive alone is insufficient.
 - Tests use observable readiness and bounded deadlines, never sleeps for synchronization.
   Per-process limits run in helper children; never lower the test runner's limits.
+  Self-kill helpers must wait for kernel termination instead of racing a normal
+  exit; writer-error helpers emit stdout in one write to avoid secondary SIGPIPE.
 - `AfterStart` owns only consumer resource cleanup. It runs once even on validation failure;
   stop and cancellation must survive callbacks and spawn publication.
 - Go may normalize the minimum directive to `1.25.0` to match the pinned dependency.

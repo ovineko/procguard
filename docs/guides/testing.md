@@ -411,6 +411,18 @@ that leaders are dead after exit and Run; State is checked after leader exit
 observation, avoiding a race between a live snapshot and a later OS probe.
 Failure output includes the seed and action trace.
 
+Self-inflicted crash helpers wait on their existing deadline after a successful
+kill request: on macOS the syscall can return before signal delivery, so returning
+an ordinary exit code would race the crash being tested. Writer-error helpers
+emit their stdout payload in one write; on BSD a second write can receive SIGPIPE
+after the parent's failing writer closes the output pipe.
+
+Windows descendant regressions verify membership in the assigned Job Object
+before natural leader exit. The normal and race suites then require graceful or
+immediate cleanup of that descendant without an output-drain timeout. Job Object
+calls preserve compiler pointer tracking by converting ABI buffers only in direct
+native syscall arguments, avoiding stale stack addresses and per-probe allocation.
+
 The package `TestMain` snapshots all goroutine stacks before tests and allows a
 bounded cleanup window afterward. New goroutines with procguard frames fail with
 their complete stacks. Model schedules also check independently after cleanup.

@@ -7,12 +7,19 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
 
 type processTree struct{ job, process windows.Handle }
+
+var (
+	jobKernel32         = windows.NewLazySystemDLL("kernel32.dll")
+	setJobInformation   = jobKernel32.NewProc("SetInformationJobObject")
+	queryJobInformation = jobKernel32.NewProc("QueryInformationJobObject")
+)
 
 func setProcAttr(cmd *exec.Cmd, _ *cgroupResources) {
 	if cmd.SysProcAttr == nil {
@@ -28,10 +35,16 @@ func newProcessTree(pid int, _ *cgroupResources) (*processTree, error) {
 	}
 	info := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{}
 	info.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+	// The x/sys uintptr wrappers lose compiler pointer tracking. Resolve the
+	// address first and convert the buffer only in the direct SyscallN call.
+	address := setJobInformation.Addr()
 	// #nosec G103 -- Windows consumes this fixed-size ABI record synchronously.
-	_, err = windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation, uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info)))
-	if err != nil {
-		return nil, errors.Join(fmt.Errorf("configure job: %w", err), windows.CloseHandle(job))
+	result, _, callErr := syscall.SyscallN(address, uintptr(job), uintptr(windows.JobObjectExtendedLimitInformation), uintptr(unsafe.Pointer(&info)), unsafe.Sizeof(info))
+	if result == 0 {
+		if callErr == 0 {
+			callErr = syscall.EINVAL
+		}
+		return nil, errors.Join(fmt.Errorf("configure job: %w", callErr), windows.CloseHandle(job))
 	}
 	//nolint:gosec // The OS-provided PID fits Windows' DWORD parameter.
 	process, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE|windows.PROCESS_SUSPEND_RESUME|windows.SYNCHRONIZE, false, uint32(pid))
@@ -95,11 +108,14 @@ type jobBasicAccountingInformation struct {
 
 func (t *processTree) remaining() (bool, error) {
 	var info jobBasicAccountingInformation
-	// #nosec G103 -- Windows fills this fixed-size ABI record synchronously.
-	err := windows.QueryInformationJobObject(t.job, windows.JobObjectBasicAccountingInformation,
-		uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info)), nil)
-	if err != nil {
-		return false, fmt.Errorf("query job active processes: %w", err)
+	address := queryJobInformation.Addr()
+	// #nosec G103 -- Direct SyscallN preserves the address of this local ABI buffer.
+	result, _, callErr := syscall.SyscallN(address, uintptr(t.job), uintptr(windows.JobObjectBasicAccountingInformation), uintptr(unsafe.Pointer(&info)), unsafe.Sizeof(info), 0)
+	if result == 0 {
+		if callErr == 0 {
+			callErr = syscall.EINVAL
+		}
+		return false, fmt.Errorf("query job active processes: %w", callErr)
 	}
 	return info.ActiveProcesses != 0, nil
 }
