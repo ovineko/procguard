@@ -178,8 +178,11 @@ func runModelSchedule(t *testing.T, seed int64) {
 			t.Fatal("State.Running after observed leader exit")
 		}
 		exited := next(EventExited)
-		if exited.PID != started.PID || exited.Exit == nil || exited.Exit.Err != nil {
-			t.Fatalf("exit: %+v", exited)
+		if exited.PID != started.PID || exited.Exit == nil || exited.Exit.Cleanup != CleanupConfirmed {
+			t.Fatalf("exit event: %+v; exit detail: %+v", exited, exited.Exit)
+		}
+		if exited.Exit.Err != nil {
+			t.Logf("confirmed cleanup diagnostic: %v", exited.Exit.Err)
 		}
 		if action == "exit0" || action == "exit7" || action == "prevent" || action == "signal" || action == "crash" {
 			if exited.Exit.Code != code {
@@ -208,7 +211,7 @@ func runModelSchedule(t *testing.T, seed int64) {
 		t.Fatal("events remain open after Run")
 	}
 	state := s.State()
-	if outcome.Reason != model.reason || state.Running || state.Launches != model.launches || state.Restarts != model.restarts || state.Failures != model.failures || state.DroppedEvents != 0 {
+	if outcome.Reason != model.reason || outcome.Cleanup != CleanupConfirmed || state.Running || state.Launches != model.launches || state.Restarts != model.restarts || state.Failures != model.failures || state.DroppedEvents != 0 {
 		t.Fatalf("model=%+v outcome=%+v state=%+v", model, outcome, state)
 	}
 	s.Stop()
@@ -243,7 +246,12 @@ func helperModel(args []string) int {
 					if findErr != nil {
 						return 98
 					}
-					_ = process.Kill()
+					if killErr := process.Kill(); killErr != nil {
+						return 98
+					}
+					// Darwin may return before SIGKILL is delivered; a normal exit
+					// must not win the race against the requested crash.
+					<-timer.C
 					return 98
 				}
 				code, err := strconv.Atoi(string(data))

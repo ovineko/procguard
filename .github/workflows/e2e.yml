@@ -157,7 +157,7 @@ jobs:
         runner:
           - ubuntu-24.04
           - ubuntu-24.04-arm
-          - macos-14
+          - macos-latest
           - windows-2022
     timeout-minutes: 20
 name: e2e

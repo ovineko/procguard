@@ -43,7 +43,7 @@ func TestSelfAddressSpace(t *testing.T) {
 		t.Skip("RLIMIT_AS conflicts with ThreadSanitizer memory needs")
 	}
 	if runtime.GOOS == "darwin" {
-		t.Skip("Darwin rejects lowering RLIMIT_AS with EINVAL")
+		t.Skip("small RLIMIT_AS requests are kernel-dependent on Darwin; native e2e verifies kernel values")
 	}
 	for _, request := range []int64{512 << 20, 256 << 20, 64 << 20, 1 << 62} {
 		t.Run(strconv.FormatInt(request, 10), func(t *testing.T) {
