@@ -179,7 +179,7 @@ func runModelSchedule(t *testing.T, seed int64) {
 		}
 		exited := next(EventExited)
 		if exited.PID != started.PID || exited.Exit == nil || exited.Exit.Err != nil {
-			t.Fatalf("exit: %+v", exited)
+			t.Fatalf("exit event: %+v; exit detail: %+v", exited, exited.Exit)
 		}
 		if action == "exit0" || action == "exit7" || action == "prevent" || action == "signal" || action == "crash" {
 			if exited.Exit.Code != code {

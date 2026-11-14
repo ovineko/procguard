@@ -56,9 +56,13 @@ jobs:
           go-version-file: go.mod
       - name: Vet
         run: go vet ./...
-      - name: Test
+      - env:
+          PROCGUARD_MODEL_RUNS: ${{ matrix.os == 'macos-latest' && '3000' || '200' }}
+        name: Test
         run: go test ./...
-      - name: Test with race detector
+      - env:
+          PROCGUARD_MODEL_RUNS: ${{ matrix.os == 'macos-latest' && '3000' || '200' }}
+        name: Test with race detector
         run: go test -race ./...
     strategy:
       fail-fast: false
