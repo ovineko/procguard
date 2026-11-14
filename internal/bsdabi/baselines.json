@@ -1,0 +1,30 @@
+{
+  "zprocabi_dragonfly_amd64.go": {
+    "architecture": "amd64",
+    "release": "DragonFly 6.4-RELEASE"
+  },
+  "zprocabi_freebsd_amd64.go": {
+    "architecture": "amd64",
+    "release": "FreeBSD 14.5-RELEASE-p3"
+  },
+  "zprocabi_freebsd_arm64.go": {
+    "architecture": "arm64",
+    "release": "FreeBSD 15.1-RELEASE"
+  },
+  "zprocabi_netbsd_amd64.go": {
+    "architecture": "amd64",
+    "release": "NetBSD 11.0"
+  },
+  "zprocabi_netbsd_arm64.go": {
+    "architecture": "arm64",
+    "release": "NetBSD 11.0"
+  },
+  "zprocabi_openbsd_amd64.go": {
+    "architecture": "amd64",
+    "release": "OpenBSD 7.9"
+  },
+  "zprocabi_openbsd_arm64.go": {
+    "architecture": "arm64",
+    "release": "OpenBSD 8.0"
+  }
+}

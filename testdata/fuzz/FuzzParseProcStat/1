@@ -1,0 +1,7 @@
+go test fuzz v1
+string(") S 1 2")
+string("")
+uint32(0)
+uint32(0)
+uint32(0)
+byte(255)

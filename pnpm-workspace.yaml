@@ -1,0 +1,33 @@
+allowBuilds:
+  esbuild: false
+audit:
+  level: high
+autoInstallPeers: true
+blockExoticSubdeps: true
+catalog:
+  "@shibanet0/datamitsu-config": 0.6.3
+dangerouslyAllowAllBuilds: false
+dedupeDirectDeps: true
+dedupePeerDependents: true
+enableGlobalVirtualStore: true
+enablePrePostScripts: false
+engineStrict: true
+hoistPattern: []
+lockfile: true
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - "@datamitsu/*"
+  - "@ovineko/*"
+  - "@shibanet0/*"
+optimisticRepeatInstall: true
+preferFrozenLockfile: true
+resolutionMode: lowest-direct
+savePrefix: ""
+strictDepBuilds: true
+strictSsl: true
+trustLockfile: true
+trustPolicy: no-downgrade
+unsafePerm: false
+updateNotifier: false
+verifyDepsBeforeRun: install
+verifyStoreIntegrity: true

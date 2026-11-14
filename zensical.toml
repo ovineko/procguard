@@ -1,0 +1,75 @@
+[project]
+site_name = "procguard"
+site_description = "Cross-platform supervision and lifecycle management for child OS processes in Go"
+site_author = "ovineko"
+site_url = "https://procguard.ovineko.com/"
+copyright = "Copyright &copy; 2026 ovineko"
+repo_url = "https://github.com/ovineko/procguard"
+repo_name = "ovineko/procguard"
+
+docs_dir = "docs"
+site_dir = "site"
+extra_css = ["assets/stylesheets/extra.css"]
+
+[project.theme]
+language = "en"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+primary = "cyan"
+accent = "cyan"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+primary = "cyan"
+accent = "cyan"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+primary = "cyan"
+accent = "cyan"
+
+[project.theme.features]
+"announce.dismiss" = true
+"content.code.annotate" = true
+"content.code.copy" = true
+"navigation.expand" = true
+"navigation.instant" = true
+"navigation.sections" = true
+"navigation.top" = true
+"search.highlight" = true
+"search.suggest" = true
+
+[[project.nav]]
+Home = "index.md"
+
+[[project.nav]]
+"Getting Started" = [
+  { Installation = "get-started/installation.md" },
+  { "Quick Start" = "get-started/quick-start.md" },
+]
+
+[[project.nav]]
+Guides = [
+  { "Process lifecycle" = "guides/process-lifecycle.md" },
+  { "Supervision and restart policy" = "guides/supervision.md" },
+  { "Stopping and process trees" = "guides/stopping.md" },
+  { "Platform guarantees" = "guides/platform-guarantees.md" },
+  { Testing = "guides/testing.md" },
+  { "Resource limits" = "guides/resource-limits.md" },
+  { "Cooperating children" = "guides/cooperating-children.md" },
+  { "Events and state" = "guides/events-and-state.md" },
+]
+
+[[project.nav]]
+Reference = [{ API = "reference/api.md" }]

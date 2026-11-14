@@ -1,0 +1,79 @@
+concurrency:
+  cancel-in-progress: true
+  group: ci-${{ github.ref }}
+jobs:
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: go.mod
+      - env:
+          GOARCH: ${{ matrix.goarch }}
+          GOOS: ${{ matrix.goos }}
+        name: Cross-compile
+        # go vet in addition to go build: go build skips _test.go files, so on
+        # its own it would not catch a mistagged test file on a target that has
+        # no runner in the test matrix.
+        run: |
+          go build ./...
+          go vet ./...
+    strategy:
+      fail-fast: false
+      matrix:
+        exclude:
+          - goarch: arm64
+            goos: dragonfly
+        goarch:
+          - amd64
+          - arm64
+        goos:
+          - linux
+          - darwin
+          - freebsd
+          - openbsd
+          - netbsd
+          - dragonfly
+          - windows
+    timeout-minutes: 15
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: go.mod
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test ./...
+      - name: Test with race detector
+        run: go test -race ./...
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    timeout-minutes: 20
+name: CI
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+permissions:
+  contents: read

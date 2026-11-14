@@ -1,0 +1,12 @@
+**/*: cspell, harper-cli, vale, typos
+
+# Subprocess control and native job handles are the library's public contract;
+# golangci-lint's gosec rules review these sites with explicit trust boundaries.
+**/*: bearer
+
+# The pinned development toolchain includes braces 3.0.3 (GHSA-vfj7-8cjw-p6xm),
+# whose upstream has no fixed release. No npm dependency ships in the Go module.
+**/*: grype, osv-scanner
+
+# Public documentation links are checked against the built site locally.
+**/*: lychee

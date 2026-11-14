@@ -1,0 +1,7 @@
+go test fuzz v1
+string("1 (hello ) (world\n) S 0 1")
+string("name ) (\n")
+uint32(1)
+uint32(0)
+uint32(1)
+byte(0)

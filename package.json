@@ -1,0 +1,34 @@
+{
+  "name": "procguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-platform child process supervision for Go",
+  "keywords": [],
+  "homepage": "https://procguard.ovineko.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ovineko/procguard.git"
+  },
+  "license": "MIT",
+  "author": "ovineko",
+  "type": "module",
+  "scripts": {
+    "build": "go build ./...",
+    "test": "go test ./...",
+    "test:coverage": "go test -coverprofile=coverage.out ./..."
+  },
+  "devDependencies": {
+    "@shibanet0/datamitsu-config": "catalog:"
+  },
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "onFail": "warn",
+      "version": ">=26.12.1"
+    }
+  }
+}

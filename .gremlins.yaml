@@ -1,0 +1,5 @@
+unleash:
+  exclude-files:
+    - "^.+/"
+  timeout-coefficient: 10
+  workers: 2

@@ -1,0 +1,5 @@
+go test fuzz v1
+string("child")
+int64(9223372036854775807)
+int64(0)
+bool(true)

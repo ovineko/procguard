@@ -1,0 +1,60 @@
+tasks:
+  coverage:
+    cmds:
+      - sh scripts/coverage.sh
+    desc: Merge unit and native e2e coverage and enforce the regression floor
+  docs:build:
+    cmds:
+      - pnpm dm exec zensical -- build --strict
+    desc: Build the Zensical documentation site into site/ and fail on warnings
+  docs:clean:
+    cmds:
+      - rm -rf site/
+    desc: Remove the generated site directory
+  docs:serve:
+    cmds:
+      - pnpm dm exec zensical -- serve --dev-addr 0.0.0.0:8000
+    desc: Serve the documentation site locally (http://localhost:8000)
+  e2e:
+    cmds:
+      - go test -tags e2e -count=1 -v ./e2e
+    desc: Run native process supervision scenarios
+  e2e:binfmt:
+    cmds:
+      - |
+        printf '%s\n' 'This privileged command registers arm64, riscv64, and arm binary interpreters in the host kernel.' 'It changes host-wide execution behavior; the owner must review and run it manually.' 'docker run --platform linux/amd64 --privileged tonistiigi/binfmt:qemu-v9.2.2 --install arm64,riscv64,arm'
+    desc: Print the optional host binfmt setup command without executing it
+  e2e:docker:
+    cmds:
+      - go test -tags e2e_docker -count=1 -v ./e2e/docker
+    desc: Run Docker deployment profiles (Docker is required)
+    env:
+      PROCGUARD_E2E_REQUIRE: "1"
+  e2e:docker:qemu:
+    cmds:
+      - go test -tags e2e_docker -count=1 -v ./e2e/docker
+    desc: Include opt-in qemu-user smoke profiles
+    env:
+      PROCGUARD_E2E_QEMU: "1"
+      PROCGUARD_E2E_REQUIRE: "1"
+  fuzz:
+    cmds:
+      - sh scripts/fuzz.sh {{.FUZZTIME}}
+    desc: Run every native fuzz target (FUZZTIME defaults to 60s)
+    vars:
+      FUZZTIME: "{{.FUZZTIME}}"
+  mutation:
+    cmds:
+      - mkdir -p coverage
+      - gremlins unleash . --output coverage/mutation.json {{.CLI_ARGS}}
+    desc: Mutate the root package with bounded concurrency and process-test timeouts
+  test:crossarch:
+    cmds:
+      - sh scripts/crossarch.sh {{.CLI_ARGS}}
+    desc: Build and run portable Linux tests in Docker, or pack with CLI_ARGS
+  test:freebsd:
+    cmds:
+      - sh scripts/bsdvm.sh up
+      - sh scripts/bsdvm.sh test
+    desc: Start the FreeBSD KVM guest and run unit, race, e2e, and model tests
+version: "3"

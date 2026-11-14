@@ -1,0 +1,171 @@
+concurrency:
+  cancel-in-progress: true
+  group: e2e-${{ github.ref }}
+jobs:
+  bsd:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: go.mod
+      - env:
+          CGO_ENABLED: "0"
+          GOARCH: ${{ matrix.goarch }}
+          GOOS: ${{ matrix.os }}
+        name: Build guest test and fixture on host
+        run: |
+          go test -c -o procguard.test .
+          go test -c -tags e2e -o e2e.test ./e2e
+          go build -tags e2e -o e2e-fixture ./e2e/fixture
+      - id: guest-start
+        name: Start BSD guest
+        uses: cross-platform-actions/action@82668f1fbd89d9c99487604f822cbf6716f124d3 # v1.7.0
+        with:
+          architecture: ${{ matrix.architecture }}
+          memory: ${{ matrix.memory }}
+          operating_system: ${{ matrix.os }}
+          shell: sh
+          version: ${{ matrix.version }}
+      - name: Run precompiled native suites in guest
+        run: |
+          set -eu
+          if [ '${{ matrix.goarch }}' = arm64 ]; then export PROCGUARD_TEST_TIME_SCALE=10; fi
+          uname -a
+          chmod +x procguard.test e2e.test e2e-fixture
+          generator=$(mktemp)
+          cc -Wall -Wextra -Werror internal/bsdabi/generate.c -o "$generator"
+          "$generator" '${{ matrix.os }}' '${{ matrix.goarch }}' > generated.go
+          cmp generated.go "zprocabi_${{ matrix.os }}_${{ matrix.goarch }}.go"
+          rm -f "$generator" generated.go
+          export PROCGUARD_E2E_FIXTURE="$PWD/e2e-fixture"
+          export PROCGUARD_E2E_ROOT="$PWD"
+          result=0
+          ./procguard.test -test.v -test.count=1 > root.txt 2>&1 || result=$?
+          cat root.txt
+          e2e_result=0
+          ./e2e.test -test.v=test2json -test.count=1 > e2e.txt 2>&1 || e2e_result=$?
+          cat e2e.txt
+          if [ "$result" -eq 0 ]; then result=$e2e_result; fi
+          exit "$result"
+        shell: cpa.sh {0} --sync-files runner-to-vm
+      # The action skips its post-command sync when a guest command fails.
+      - if: always() && steps.guest-start.outcome == 'success'
+        name: Retrieve guest output even after scenario failure
+        run: cpa.sh --sync-files vm-to-runner
+      - if: always() && hashFiles('root.txt') != ''
+        name: Convert native root output to JSON on host
+        run: go tool test2json -p github.com/ovineko/procguard < root.txt > root.json
+      - if: always() && hashFiles('e2e.txt') != ''
+        name: Convert guest output to JSON on host
+        run: go tool test2json -p github.com/ovineko/procguard/e2e < e2e.txt > e2e.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-${{ matrix.os }}-${{ matrix.goarch }}
+          path: |
+            root.json
+            root.txt
+            e2e.json
+            e2e.txt
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86-64
+            goarch: amd64
+            memory: 6G
+            os: freebsd
+            version: "15.1"
+          - architecture: arm64
+            goarch: arm64
+            memory: 6G
+            os: freebsd
+            version: "15.1"
+          - architecture: x86-64
+            goarch: amd64
+            memory: 6G
+            os: openbsd
+            version: "7.9"
+          - architecture: arm64
+            goarch: arm64
+            memory: 3072M
+            os: openbsd
+            version: "8.0"
+          - architecture: x86-64
+            goarch: amd64
+            memory: 6G
+            os: netbsd
+            version: "11.0"
+          - architecture: arm64
+            goarch: arm64
+            memory: 6G
+            os: netbsd
+            version: "11.0"
+    timeout-minutes: 30
+  docker:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: go.mod
+      - name: Prepare user cgroup delegation
+        run: |
+          uid=$(id -u)
+          sudo systemctl start "user@$uid.service"
+          echo "XDG_RUNTIME_DIR=/run/user/$uid" >> "$GITHUB_ENV"
+          echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus" >> "$GITHUB_ENV"
+      - env:
+          PROCGUARD_E2E_REQUIRE: "1"
+        name: Docker profiles
+        run: |
+          set -o pipefail
+          go test -tags e2e_docker -count=1 -json ./e2e/docker | tee e2e.json
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-docker
+          path: e2e.json
+    timeout-minutes: 30
+  native:
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: go.mod
+      - name: Native scenarios
+        run: |
+          set -o pipefail
+          go test -tags e2e -count=1 -json ./e2e | tee e2e.json
+        shell: bash
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-${{ matrix.runner }}
+          path: e2e.json
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - macos-14
+          - windows-2022
+    timeout-minutes: 20
+name: e2e
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+permissions:
+  contents: read
