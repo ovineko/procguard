@@ -47,8 +47,6 @@
   The raw regression must use a non-leader thread; the main thread can remain present.
 - Linux procfs permission errors require a group check: ignore unrelated or vanished
   PIDs, but retain conservative fallback for unreadable members or unknown groups.
-- Darwin group-signal EPERM is benign only after a kernel query confirms no live
-  group members including the leader; retain real denials and probe failures.
 - BSD process membership tests use native generated ABI records; a failed or malformed query is an error, never empty membership.
 - Portable tests: `task test:crossarch`; `sh scripts/crossarch.sh pack /tmp/procguard-tests.tar.gz`
   creates a hardware bundle. Unit helpers re-execute the absolute test-binary path and never build
@@ -59,6 +57,8 @@
 - Fuzz: `task fuzz FUZZTIME=60s`. Supervisor model: `PROCGUARD_MODEL_RUNS=1000 go test -race -run Model ./...`;
   use `-seed` for replay. The package TestMain checks procguard goroutine stacks after cleanup.
   `State` must consult the leader's Exited channel directly, without an asynchronous flag update.
+  Model exits require CleanupConfirmed, not Err == nil; retain diagnostics and
+  independently check PID liveness, event order, status, counters, and policy.
 - Documentation tasks: `docs:build`, `docs:clean`, `docs:serve` in `Taskfile.yaml`.
   `docs:build` must fail on warnings. GitHub Pages deploys stable version tags or a manual
   dispatch; keep its output directory aligned with `zensical.toml`.

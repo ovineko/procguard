@@ -56,6 +56,7 @@ type Record struct {
 	State             *State            `json:"state,omitempty"`
 	Error             string            `json:"error,omitempty"`
 	Permission        bool              `json:"permission,omitempty"`
+	Invalid           bool              `json:"invalid,omitempty"`
 	Unsupported       bool              `json:"unsupported,omitempty"`
 	Calls             int               `json:"calls,omitempty"`
 	Markers           int               `json:"markers,omitempty"`

@@ -16,17 +16,10 @@ func (t *processTree) remaining() (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("enumerate process group: %w", err)
 	}
-	return darwinGroupHasLiveProcesses(processes, t.pid, true), nil
-}
-
-func darwinGroupHasLiveProcesses(processes []unix.KinfoProc, pgid int, excludeLeader bool) bool {
 	for _, process := range processes {
-		if excludeLeader && int(process.Proc.P_pid) == pgid {
-			continue
-		}
-		if int(process.Eproc.Pgid) == pgid && process.Proc.P_stat != darwinZombie {
-			return true
+		if int(process.Proc.P_pid) != t.pid && int(process.Eproc.Pgid) == t.pid && process.Proc.P_stat != darwinZombie {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }

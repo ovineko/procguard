@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/ovineko/procguard/internal/testsupport"
@@ -300,18 +301,15 @@ func capability(c config) error {
 			return readErr
 		}
 		err := procguard.ApplyLimitsToSelf(limits)
-		var actual wire.LimitObservation
-		if err == nil {
-			actual, readErr = limitValues()
-			if readErr != nil {
-				return readErr
-			}
-			actual.BeforeAddressSpace, actual.BeforeOOM = before.AddressSpace, before.OOM
-			if limits.OOMScoreAdj != nil {
-				actual.WantedOOM = *limits.OOMScoreAdj
-			}
+		actual, readErr := limitValues()
+		if readErr != nil {
+			return readErr
 		}
-		r := wire.Record{Event: "capability", Limits: &actual, Unsupported: errors.Is(err, procguard.ErrUnsupported)}
+		actual.BeforeAddressSpace, actual.BeforeOOM = before.AddressSpace, before.OOM
+		if limits.OOMScoreAdj != nil {
+			actual.WantedOOM = *limits.OOMScoreAdj
+		}
+		r := wire.Record{Event: "capability", Limits: &actual, Unsupported: errors.Is(err, procguard.ErrUnsupported), Invalid: errors.Is(err, syscall.EINVAL)}
 		if err != nil {
 			r.Error = err.Error()
 		}

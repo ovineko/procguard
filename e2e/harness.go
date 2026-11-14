@@ -431,12 +431,33 @@ func assertCapabilityOutcome(t *testing.T, capability, goos string, r wire.Recor
 		if !r.Unsupported {
 			t.Fatalf("expected ErrUnsupported: %+v", r)
 		}
-	case "error":
-		if r.Error == "" || r.Unsupported {
-			t.Fatal("expected platform limit error")
+	case "darwin-self-limit":
+		if err := assertDarwinSelfLimit(r); err != nil {
+			t.Fatal(err)
 		}
 	}
 	return capability
+}
+
+func assertDarwinSelfLimit(r wire.Record) error {
+	if r.Unsupported || r.Limits == nil {
+		return fmt.Errorf("missing Darwin kernel limit observation: %+v", r)
+	}
+	limits := r.Limits
+	want := min(uint64(wire.AddressSpace), limits.HardAddressSpace)
+	if want == 0 || limits.BeforeAddressSpace == 0 || limits.BeforeAddressSpace == want {
+		return fmt.Errorf("invalid Darwin limit baseline: %+v", limits)
+	}
+	if r.Error != "" {
+		if !r.Invalid || limits.AddressSpace != limits.BeforeAddressSpace {
+			return fmt.Errorf("darwin limit rejection is not EINVAL with unchanged state: %+v", r)
+		}
+		return nil
+	}
+	if r.Invalid || limits.AddressSpace != want {
+		return fmt.Errorf("darwin limit not changed to %d: %+v", want, r)
+	}
+	return nil
 }
 
 func assertImmediateNaturalExit(t *testing.T, want Expectation, find func(string) wire.Record) {

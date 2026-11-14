@@ -52,7 +52,7 @@ var Scenarios = []Scenario{
 	{"empty-unit", "supervise", four(Expectation{MaxWait: time.Second}, Expectation{MaxWait: time.Second}, Expectation{MaxWait: time.Second}, Expectation{MaxWait: time.Second})},
 	{"exit-killed", "supervise", four(Expectation{Killed: true}, Expectation{Killed: true}, Expectation{Killed: true}, Expectation{Killed: true})},
 	{"parent-limits", "supervise", four(Expectation{Capability: "ok", Limits: "parent"}, Expectation{Capability: "unsupported"}, Expectation{Capability: "unsupported"}, Expectation{Capability: "unsupported"})},
-	{"self-address-space", "supervise", four(Expectation{Capability: "ok", Limits: "address-space"}, Expectation{Capability: "error"}, Expectation{Capability: "bsd-self-limit", Limits: "address-space"}, Expectation{Capability: "unsupported"})},
+	{"self-address-space", "supervise", four(Expectation{Capability: "ok", Limits: "address-space"}, Expectation{Capability: "darwin-self-limit"}, Expectation{Capability: "bsd-self-limit", Limits: "address-space"}, Expectation{Capability: "unsupported"})},
 	{"self-oom", "supervise", four(Expectation{Capability: "ok", Limits: "oom"}, Expectation{Capability: "ok"}, Expectation{Capability: "ok"}, Expectation{Capability: "ok"})},
 	{"watch-parent", "anchor", four(Expectation{ParentCause: true, Subreaper: true}, Expectation{ParentCause: true}, Expectation{ParentCause: true}, Expectation{Capability: "unsupported"})},
 	{"cgroup-v2", "supervise", four(Expectation{Capability: "ok", Reason: "requires a delegated cgroup v2 subtree; set PROCGUARD_E2E_CGROUP_REQUIRE=1 to enforce"}, Expectation{Capability: "unsupported"}, Expectation{Capability: "unsupported"}, Expectation{Capability: "unsupported"})},

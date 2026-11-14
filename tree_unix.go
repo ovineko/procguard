@@ -4,6 +4,7 @@ package procguard
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"syscall"
 	"time"
@@ -11,6 +12,13 @@ import (
 
 func (t *processTree) resume() error    { return nil }
 func (t *processTree) terminate() error { return t.signal(syscall.SIGTERM) }
+
+func (t *processTree) signal(sig syscall.Signal) error {
+	if err := syscall.Kill(-t.pid, sig); err != nil && !errors.Is(err, syscall.ESRCH) {
+		return fmt.Errorf("signal process group: %w", err)
+	}
+	return nil
+}
 
 func exitSignal(state *os.ProcessState) os.Signal {
 	if state != nil {
