@@ -47,7 +47,18 @@ func remainingInProc(root string, leader int, readFile func(string) ([]byte, err
 		}
 		group, state, err := parseProcessStat(string(data))
 		if err != nil {
-			return false, err
+			actualGroup, groupErr := getpgid(pid)
+			switch {
+			case errors.Is(groupErr, unix.ESRCH):
+				continue
+			case groupErr != nil:
+				return false, fmt.Errorf("inspect process %d in group %d: %w", pid, leader,
+					errors.Join(err, fmt.Errorf("get process group: %w", groupErr)))
+			case actualGroup < 0, actualGroup == leader:
+				return false, fmt.Errorf("inspect process %d in group %d: %w", pid, leader, err)
+			default:
+				continue
+			}
 		}
 		if group == leader && state != 'Z' && state != 'X' && state != 'x' {
 			return true, nil

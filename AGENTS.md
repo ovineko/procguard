@@ -45,8 +45,9 @@
 - Linux launches keep a dedicated locked spawning thread until reaping. Do not move
   `cmd.Start` back onto the caller's thread: its exit can deliver Pdeathsig early.
   The raw regression must use a non-leader thread; the main thread can remain present.
-- Linux procfs permission errors require a group check: ignore unrelated or vanished
-  PIDs, but retain conservative fallback for unreadable members or unknown groups.
+- Linux procfs permission and parse failures need a group check: ignore unrelated or vanished
+  PIDs, but keep owned or unknown membership conservative. A malformed record is excluded only
+  after getpgid reports ESRCH or a nonnegative different group; keep the stat parser strict.
 - BSD process membership tests use native generated ABI records; a failed or malformed query is an error, never empty membership.
 - Portable tests: `task test:crossarch`; `sh scripts/crossarch.sh pack /tmp/procguard-tests.tar.gz`
   creates a hardware bundle. Unit helpers re-execute the absolute test-binary path and never build
@@ -87,6 +88,8 @@
   Keep Job Object ABI buffers as typed pointers until a direct SyscallN call;
   x/sys uintptr wrappers lose stack relocation tracking. KeepAlive alone is insufficient.
 - Tests use observable readiness and bounded deadlines, never sleeps for synchronization.
+
+- Linux process tests distinguish descendant liveness (`processGone`, which accepts zombies) from direct-child reaping (`leaderReaped`, only for a known owned child). To prove lifecycle reaping, hold cleanup at a membership barrier before `Wait`, observe waitability non-consumingly, then verify reaping after the lifecycle completes; never use this oracle for arbitrary PIDs or grandchildren.
   Per-process limits run in helper children; never lower the test runner's limits.
   Self-kill helpers must wait for kernel termination instead of racing a normal
   exit; writer-error helpers emit stdout in one write to avoid secondary SIGPIPE.

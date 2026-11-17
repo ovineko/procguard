@@ -103,8 +103,12 @@ unconfirmed. This process evidence is independent of exit status, I/O errors,
 and handle/leaf close diagnostics. A confirmed exit can carry `Exit.Err`; an
 unconfirmed terminal result carries `CleanupFailed` and an error wrapping
 `ErrCleanupUnconfirmed`. A successful signal by itself is not confirmation.
-Failed or malformed runtime enumeration is retained as an error and cannot be
-reported as an empty unit.
+Unresolved failed or malformed runtime enumeration is retained as an error and cannot be
+reported as an empty unit. For a malformed Linux procfs record, an independent `getpgid`
+lookup excludes the PID only if it has disappeared (`ESRCH`) or currently has a nonnegative
+group different from the watched leader. Owned or unknown membership remains an error;
+the stat parser still rejects negative process groups. The lookup is a later observation,
+not an atomic identity check against the stat read.
 
 On macOS a group signal can race process exit and report `EPERM` even when final
 membership observation later confirms an empty unit. The signal error remains
